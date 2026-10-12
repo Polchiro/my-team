@@ -1,3 +1,7 @@
+# handoff notes stay local
+workspace/outbox/*.md
+!workspace/outbox/README.md
+
 # OS junk
 Thumbs.db
 desktop.ini
