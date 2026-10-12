@@ -1,0 +1,800 @@
+<!-- Handoff: Improved BMI calculator v4 — detailed health readout, healthy-weight range, distance-to-range, BMI scale bar, metric/imperial units, local history, copy & print, bilingual EN/繁中, accessible, no external dependencies. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="docTitle">BMI Calculator</title>
+  <style>
+    :root {
+      --bg: #f3f4f6;
+      --card-bg: #ffffff;
+      --text-main: #1f2937;
+      --text-muted: #4b5563;
+      --border: #d1d5db;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --secondary: #e5e7eb;
+      --secondary-hover: #d1d5db;
+      --error-bg: #fee2e2;
+      --error-text: #991b1b;
+      --underweight: #0284c7;
+      --normal: #16a34a;
+      --overweight: #d97706;
+      --obese: #dc2626;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px 48px;
+      min-height: 100vh;
+    }
+
+    .container {
+      background: var(--card-bg);
+      border-radius: 14px;
+      padding: 28px;
+      width: 100%;
+      max-width: 560px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-weight: 600;
+      transition: background-color 0.2s, color 0.2s;
+    }
+    .chip:hover { background: var(--secondary); color: var(--text-main); }
+
+    h1 { font-size: 1.5rem; margin-bottom: 6px; text-align: center; }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 22px;
+    }
+
+    .form-group { margin-bottom: 16px; }
+
+    label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: var(--primary); }
+
+    .btn-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    button.action {
+      flex: 1 1 46%;
+      padding: 11px 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s, color 0.2s;
+    }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .btn-secondary { background: var(--secondary); color: var(--text-main); }
+    .btn-secondary:hover { background: var(--secondary-hover); }
+
+    .btn-ghost {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .btn-ghost:hover { background: var(--secondary); color: var(--text-main); }
+
+    .error-msg {
+      display: none;
+      background: var(--error-bg);
+      color: var(--error-text);
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      margin-top: 16px;
+      line-height: 1.4;
+    }
+
+    .result-box {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 10px;
+      background: #f9fafb;
+      border: 1px solid var(--border);
+    }
+
+    .result-head { text-align: center; }
+    .result-title { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 4px; }
+    .bmi-value { font-size: 2.6rem; font-weight: 700; line-height: 1.1; }
+    .bmi-unit { font-size: 1rem; color: var(--text-muted); font-weight: 500; }
+
+    .badge {
+      display: inline-block;
+      margin-top: 8px;
+      padding: 5px 14px;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .badge-underweight { background: var(--underweight); }
+    .badge-normal { background: var(--normal); }
+    .badge-overweight { background: var(--overweight); }
+    .badge-obese { background: var(--obese); }
+
+    .cat-desc {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    .scale {
+      position: relative;
+      margin-top: 18px;
+      height: 10px;
+      border-radius: 999px;
+      overflow: visible;
+      display: flex;
+      background: var(--secondary);
+    }
+    .scale span { display: block; height: 100%; }
+    .scale .seg-u { background: var(--underweight); }
+    .scale .seg-n { background: var(--normal); }
+    .scale .seg-o { background: var(--overweight); }
+    .scale .seg-b { background: var(--obese); }
+    .marker {
+      position: absolute;
+      top: -5px;
+      width: 4px;
+      height: 20px;
+      border-radius: 2px;
+      background: var(--text-main);
+      transform: translateX(-50%);
+      box-shadow: 0 0 0 2px #fff;
+    }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 18px;
+    }
+    .detail-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .detail-label { font-size: 0.78rem; color: var(--text-muted); }
+    .detail-value { font-size: 1rem; font-weight: 700; margin-top: 2px; }
+
+    .status-line {
+      grid-column: 1 / -1;
+      background: #fff;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
+    .section-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .link-btn {
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 2px 4px;
+    }
+    .link-btn:hover { text-decoration: underline; }
+
+    .history-list { list-style: none; margin-top: 10px; display: grid; gap: 8px; }
+    .history-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.86rem;
+    }
+    .history-meta { color: var(--text-muted); }
+    .history-bmi { font-weight: 700; }
+    .history-empty { font-size: 0.86rem; color: var(--text-muted); margin-top: 8px; }
+
+    .ranges {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+    .ranges ul {
+      list-style: none;
+      margin-top: 8px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px 12px;
+    }
+    .ranges li { display: flex; align-items: center; gap: 6px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(20px);
+      background: #111827;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 0.88rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 20;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px; height: 1px;
+      padding: 0; margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: 22px 18px; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .ranges ul { grid-template-columns: 1fr; }
+      button.action { flex: 1 1 100%; }
+    }
+
+    @media print {
+      body { background: #fff; padding: 0; display: block; }
+      .container { box-shadow: none; border: none; max-width: 100%; padding: 0; }
+      .top-bar, .btn-row, .history-section, .toast, .subtitle { display: none !important; }
+      .result-box { display: block !important; border: 1px solid #ccc; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <div class="top-bar">
+      <button type="button" class="chip" id="btnLangToggle">繁體中文</button>
+      <button type="button" class="chip" id="btnUnitToggle">Imperial</button>
+    </div>
+
+    <h1 id="titleText">BMI Calculator</h1>
+    <p class="subtitle" id="subtitleText">Your BMI, healthy weight range and history in one place</p>
+
+    <form id="bmiForm" novalidate>
+      <div class="form-group">
+        <label for="height" id="heightLabel">Height (cm)</label>
+        <input type="number" id="height" placeholder="e.g. 170" step="any" min="0" inputmode="decimal">
+      </div>
+      <div class="form-group">
+        <label for="weight" id="weightLabel">Weight (kg)</label>
+        <input type="number" id="weight" placeholder="e.g. 65" step="any" min="0" inputmode="decimal">
+      </div>
+
+      <div class="btn-row">
+        <button type="submit" class="action btn-primary" id="btnCalculate">Calculate</button>
+        <button type="button" class="action btn-secondary" id="btnClear">Clear</button>
+        <button type="button" class="action btn-ghost" id="btnCopy">Copy result</button>
+        <button type="button" class="action btn-ghost" id="btnPrint">Print / PDF</button>
+      </div>
+    </form>
+
+    <div class="error-msg" id="errorMsg" role="alert"></div>
+
+    <section class="result-box" id="resultBox" aria-live="polite">
+      <div class="result-head">
+        <div class="result-title" id="resultTitle">Your BMI</div>
+        <div class="bmi-value"><span id="bmiValue">--</span> <span class="bmi-unit">kg/m²</span></div>
+        <span class="badge badge-normal" id="categoryBadge">Normal</span>
+      </div>
+      <p class="cat-desc" id="catDesc"></p>
+
+      <div class="scale" id="scale" aria-hidden="true">
+        <span class="seg-u" style="flex: 8.5"></span>
+        <span class="seg-n" style="flex: 5.5"></span>
+        <span class="seg-o" style="flex: 3"></span>
+        <span class="seg-b" style="flex: 13"></span>
+        <span class="marker" id="scaleMarker" style="left: 50%"></span>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-card">
+          <div class="detail-label" id="healthyLabel">Healthy weight range</div>
+          <div class="detail-value" id="healthyValue">--</div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-label" id="bmiLabel">BMI (exact)</div>
+          <div class="detail-value" id="bmiExact">--</div>
+        </div>
+        <div class="status-line" id="statusLine"></div>
+      </div>
+    </section>
+
+    <section class="history-section">
+      <div class="section-title">
+        <span id="historyTitle">Recent calculations</span>
+        <button type="button" class="link-btn" id="btnClearHistory">Clear history</button>
+      </div>
+      <div class="history-empty" id="historyEmpty">No calculations yet.</div>
+      <ul class="history-list" id="historyList"></ul>
+    </section>
+
+    <section class="ranges">
+      <strong id="rangesTitle">Standard adult ranges</strong>
+      <ul>
+        <li><span class="dot" style="background: var(--underweight)"></span><span id="rangeUnderweight">Underweight: &lt; 18.5</span></li>
+        <li><span class="dot" style="background: var(--normal)"></span><span id="rangeNormal">Normal: 18.5 – 23.9</span></li>
+        <li><span class="dot" style="background: var(--overweight)"></span><span id="rangeOverweight">Overweight: 24 – 26.9</span></li>
+        <li><span class="dot" style="background: var(--obese)"></span><span id="rangeObese">Obese: ≥ 27</span></li>
+      </ul>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const KG_TO_LB = 2.2046226218;
+    const CM_TO_IN = 0.3937007874;
+    const MAX_HISTORY = 6;
+
+    const T = {
+      en: {
+        docTitle: 'BMI Calculator',
+        langBtn: '繁體中文',
+        unitBtn: 'Imperial',
+        title: 'BMI Calculator',
+        subtitle: 'Your BMI, healthy weight range and history in one place',
+        heightLabel: 'Height (cm)',
+        weightLabel: 'Weight (kg)',
+        heightPh: 'e.g. 170',
+        weightPh: 'e.g. 65',
+        calculate: 'Calculate',
+        clear: 'Clear',
+        copy: 'Copy result',
+        print: 'Print / PDF',
+        copied: 'Result copied to clipboard',
+        copyFail: 'Could not copy — please select and copy manually',
+        resultTitle: 'Your BMI',
+        healthyLabel: 'Healthy weight range',
+        bmiLabel: 'BMI (exact)',
+        statusIn: 'You are within the healthy weight range for your height.',
+        statusBelow: 'You need {x} {u} more to reach the healthy range.',
+        statusAbove: 'You need to reduce {x} {u} to reach the healthy range.',
+        historyTitle: 'Recent calculations',
+        clearHistory: 'Clear history',
+        historyEmpty: 'No calculations yet.',
+        reuse: 'Use',
+        rangesTitle: 'Standard adult ranges',
+        rangeUnderweight: 'Underweight: < 18.5',
+        rangeNormal: 'Normal: 18.5 – 23.9',
+        rangeOverweight: 'Overweight: 24 – 26.9',
+        rangeObese: 'Obese: ≥ 27',
+        catUnderweight: 'Underweight',
+        catNormal: 'Normal',
+        catOverweight: 'Overweight',
+        catObese: 'Obese',
+        descUnderweight: 'Below the healthy range. Eating a little more, regularly, usually helps.',
+        descNormal: 'Within the healthy range. Keep up the balanced habits.',
+        descOverweight: 'Above the healthy range. A bit more activity and lighter meals can help.',
+        descObese: 'Well above the healthy range. Consider talking with a healthcare professional.',
+        errEmpty: 'Please enter both height and weight.',
+        errPositive: 'Height and weight must be greater than zero.',
+        errInvalid: 'Please enter valid numeric values.',
+        unitKg: 'kg', unitLb: 'lb', unitCm: 'cm', unitIn: 'in',
+        historyFmt: '{h} {hu} · {w} {wu} · {t}'
+      },
+      zh: {
+        docTitle: 'BMI 計算器',
+        langBtn: 'English',
+        unitBtn: '公制',
+        title: 'BMI 計算器',
+        subtitle: '一次看清 BMI、健康體重區間與計算紀錄',
+        heightLabel: '身高（公分）',
+        weightLabel: '體重（公斤）',
+        heightPh: '例如 170',
+        weightPh: '例如 65',
+        calculate: '計算',
+        clear: '清除',
+        copy: '複製結果',
+        print: '列印 / PDF',
+        copied: '結果已複製到剪貼簿',
+        copyFail: '無法複製，請自行選取複製',
+        resultTitle: '你的 BMI',
+        healthyLabel: '健康體重區間',
+        bmiLabel: 'BMI（精確值）',
+        statusIn: '你的體重落在健康區間內。',
+        statusBelow: '需再增加 {x} {u} 才會進入健康區間。',
+        statusAbove: '需再減少 {x} {u} 才會回到健康區間。',
+        historyTitle: '最近計算',
+        clearHistory: '清除紀錄',
+        historyEmpty: '尚無計算紀錄。',
+        reuse: '套用',
+        rangesTitle: '成人標準區間',
+        rangeUnderweight: '過輕：< 18.5',
+        rangeNormal: '正常：18.5 – 23.9',
+        rangeOverweight: '過重：24 – 26.9',
+        rangeObese: '肥胖：≥ 27',
+        catUnderweight: '過輕',
+        catNormal: '正常',
+        catOverweight: '過重',
+        catObese: '肥胖',
+        descUnderweight: '低於健康區間，適量增加飲食通常有幫助。',
+        descNormal: '落在健康區間內，請維持目前習慣。',
+        descOverweight: '高於健康區間，多活動、飲食清淡些會有幫助。',
+        descObese: '明顯高於健康區間，建議諮詢醫療專業人員。',
+        errEmpty: '請同時輸入身高與體重。',
+        errPositive: '身高與體重必須大於 0。',
+        errInvalid: '請輸入有效的數字。',
+        unitKg: '公斤', unitLb: '磅', unitCm: '公分', unitIn: '吋',
+        historyFmt: '{h} {hu} · {w} {wu} · {t}'
+      }
+    };
+
+    let lang = 'en';
+    let unit = 'metric';
+    let history = [];
+    let lastResult = null;
+    let currentErrorKey = null;
+
+    const $ = id => document.getElementById(id);
+    const t = () => T[lang];
+    const round1 = n => Math.round(n * 10) / 10;
+    const fmt1 = n => round1(n).toFixed(1);
+    const store = {
+      get(k, fallback) {
+        try { const v = localStorage.getItem(k); return v === null ? fallback : JSON.parse(v); }
+        catch (e) { return fallback; }
+      },
+      set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    };
+
+    function categoryOf(bmi) {
+      if (bmi < 18.5) return 'catUnderweight';
+      if (bmi < 24) return 'catNormal';
+      if (bmi < 27) return 'catOverweight';
+      return 'catObese';
+    }
+
+    function applyLanguage(next) {
+      lang = next;
+      store.set('bmi_lang', lang);
+      document.documentElement.lang = lang === 'zh' ? 'zh-Hant-TW' : 'en';
+      const s = t();
+
+      document.title = s.docTitle;
+      $('btnLangToggle').textContent = s.langBtn;
+      $('btnUnitToggle').textContent = s.unitBtn;
+      $('titleText').textContent = s.title;
+      $('subtitleText').textContent = s.subtitle;
+      $('heightLabel').textContent = unit === 'metric' ? s.heightLabel : (lang === 'zh' ? '身高（吋）' : 'Height (in)');
+      $('weightLabel').textContent = unit === 'metric' ? s.weightLabel : (lang === 'zh' ? '體重（磅）' : 'Weight (lb)');
+      $('height').placeholder = unit === 'metric' ? s.heightPh : (lang === 'zh' ? '例如 67' : 'e.g. 67');
+      $('weight').placeholder = unit === 'metric' ? s.weightPh : (lang === 'zh' ? '例如 143' : 'e.g. 143');
+      $('btnCalculate').textContent = s.calculate;
+      $('btnClear').textContent = s.clear;
+      $('btnCopy').textContent = s.copy;
+      $('btnPrint').textContent = s.print;
+      $('resultTitle').textContent = s.resultTitle;
+      $('healthyLabel').textContent = s.healthyLabel;
+      $('bmiLabel').textContent = s.bmiLabel;
+      $('historyTitle').textContent = s.historyTitle;
+      $('btnClearHistory').textContent = s.clearHistory;
+      $('historyEmpty').textContent = s.historyEmpty;
+      $('rangesTitle').textContent = s.rangesTitle;
+      $('rangeUnderweight').textContent = s.rangeUnderweight;
+      $('rangeNormal').textContent = s.rangeNormal;
+      $('rangeOverweight').textContent = s.rangeOverweight;
+      $('rangeObese').textContent = s.rangeObese;
+
+      if (currentErrorKey) $('errorMsg').textContent = s[currentErrorKey];
+      if (lastResult) renderResult(lastResult, false);
+      renderHistory();
+    }
+
+    function applyUnit(next) {
+      const h = $('height').value.trim();
+      const w = $('weight').value.trim();
+      if (h !== '' && !Number.isNaN(Number(h)) && w !== '' && !Number.isNaN(Number(w))) {
+        if (next === 'imperial') {
+          $('height').value = fmt1(Number(h) * CM_TO_IN);
+          $('weight').value = fmt1(Number(w) * KG_TO_LB);
+        } else {
+          $('height').value = fmt1(Number(h) / CM_TO_IN);
+          $('weight').value = fmt1(Number(w) / KG_TO_LB);
+        }
+      }
+      unit = next;
+      store.set('bmi_unit', unit);
+      applyLanguage(lang);
+      if (lastResult) {
+        const hVal = $('height').value.trim();
+        const wVal = $('weight').value.trim();
+        if (hVal !== '' && wVal !== '') calculate(false);
+      }
+    }
+
+    function showError(key) {
+      currentErrorKey = key;
+      const box = $('errorMsg');
+      box.textContent = t()[key];
+      box.style.display = 'block';
+      $('resultBox').style.display = 'none';
+      lastResult = null;
+    }
+
+    function hideError() {
+      currentErrorKey = null;
+      const box = $('errorMsg');
+      box.textContent = '';
+      box.style.display = 'none';
+    }
+
+    function calculate(record) {
+      hideError();
+      const hStr = $('height').value.trim();
+      const wStr = $('weight').value.trim();
+
+      if (hStr === '' || wStr === '') { showError('errEmpty'); return; }
+      const hVal = Number(hStr);
+      const wVal = Number(wStr);
+      if (Number.isNaN(hVal) || Number.isNaN(wVal)) { showError('errInvalid'); return; }
+      if (hVal <= 0 || wVal <= 0) { showError('errPositive'); return; }
+
+      const heightCm = unit === 'metric' ? hVal : hVal / CM_TO_IN;
+      const weightKg = unit === 'metric' ? wVal : wVal / KG_TO_LB;
+      const heightM = heightCm / 100;
+      const raw = weightKg / (heightM * heightM);
+      const bmi = round1(raw);
+      const cat = categoryOf(bmi);
+
+      const lowKg = 18.5 * heightM * heightM;
+      const highKg = 23.9 * heightM * heightM;
+      const low = unit === 'metric' ? lowKg : lowKg * KG_TO_LB;
+      const high = unit === 'metric' ? highKg : highKg * KG_TO_LB;
+      const weight = unit === 'metric' ? weightKg : weightKg * KG_TO_LB;
+      const u = unit === 'metric' ? t().unitKg : t().unitLb;
+
+      let statusKey, delta = null;
+      if (bmi < 18.5) { statusKey = 'statusBelow'; delta = fmt1(low - weight); }
+      else if (bmi > 23.9) { statusKey = 'statusAbove'; delta = fmt1(weight - high); }
+      else { statusKey = 'statusIn'; }
+
+      const result = { bmi, raw, cat, low: fmt1(low), high: fmt1(high), statusKey, delta, unitKey: u, hCm: heightCm, kg: weightKg };
+      lastResult = result;
+      renderResult(result, true);
+
+      if (record !== false) addHistory(result);
+      return result;
+    }
+
+    function renderResult(r, animate) {
+      $('resultBox').style.display = 'block';
+      $('bmiValue').textContent = fmt1(r.bmi);
+      $('bmiExact').textContent = fmt1(r.raw);
+      $('healthyValue').textContent = r.low + ' – ' + r.high + ' ' + r.unitKey;
+
+      const badge = $('categoryBadge');
+      badge.className = 'badge ' + r.cat.replace('cat', 'badge-').toLowerCase();
+      badge.textContent = t()[r.cat];
+      $('catDesc').textContent = t()['desc' + r.cat.replace('cat', '')];
+
+      $('statusLine').textContent = r.statusKey === 'statusIn'
+        ? t()[r.statusKey]
+        : t()[r.statusKey].replace('{x}', r.delta).replace('{u}', r.unitKey);
+
+      const pct = Math.max(0, Math.min(100, ((r.bmi - 10) / 30) * 100));
+      $('scaleMarker').style.left = pct + '%';
+      $('scaleMarker').setAttribute('aria-label', fmt1(r.bmi));
+    }
+
+    function addHistory(r) {
+      const entry = {
+        h: unit === 'metric' ? fmt1(r.hCm) : fmt1(r.hCm * CM_TO_IN),
+        w: unit === 'metric' ? fmt1(r.kg) : fmt1(r.kg * KG_TO_LB),
+        unit: unit,
+        bmi: r.bmi,
+        cat: r.cat,
+        ts: Date.now()
+      };
+      history.unshift(entry);
+      if (history.length > MAX_HISTORY) history = history.slice(0, MAX_HISTORY);
+      store.set('bmi_history', history);
+      renderHistory();
+    }
+
+    function renderHistory() {
+      const list = $('historyList');
+      list.innerHTML = '';
+      $('historyEmpty').style.display = history.length ? 'none' : 'block';
+      const s = t();
+
+      history.forEach((e, i) => {
+        const li = document.createElement('li');
+        li.className = 'history-item';
+
+        const meta = document.createElement('span');
+        meta.className = 'history-meta';
+        const hu = e.unit === 'metric' ? s.unitCm : s.unitIn;
+        const wu = e.unit === 'metric' ? s.unitKg : s.unitLb;
+        const time = new Date(e.ts).toLocaleTimeString(lang === 'zh' ? 'zh-TW' : 'en-US', { hour: '2-digit', minute: '2-digit' });
+        meta.textContent = s.historyFmt.replace('{h}', e.h).replace('{hu}', hu).replace('{w}', e.w).replace('{wu}', wu).replace('{t}', time);
+
+        const right = document.createElement('span');
+        const bmiSpan = document.createElement('span');
+        bmiSpan.className = 'history-bmi';
+        bmiSpan.textContent = fmt1(e.bmi);
+        right.appendChild(bmiSpan);
+
+        const useBtn = document.createElement('button');
+        useBtn.type = 'button';
+        useBtn.className = 'link-btn';
+        useBtn.textContent = s.reuse;
+        useBtn.addEventListener('click', () => {
+          unit = e.unit;
+          store.set('bmi_unit', unit);
+          $('height').value = e.h;
+          $('weight').value = e.w;
+          applyLanguage(lang);
+          calculate(true);
+        });
+        right.appendChild(document.createTextNode(' '));
+        right.appendChild(useBtn);
+
+        li.appendChild(meta);
+        li.appendChild(right);
+        list.appendChild(li);
+      });
+    }
+
+    function copyResult() {
+      if (!lastResult) { showError('errEmpty'); return; }
+      const r = lastResult;
+      const s = t();
+      const lines = [
+        s.title + ' — ' + s.resultTitle + ' ' + fmt1(r.bmi),
+        s[r.cat] + ' (BMI ' + fmt1(r.raw) + ')',
+        s.healthyLabel + ': ' + r.low + ' – ' + r.high + ' ' + r.unitKey,
+        r.statusKey === 'statusIn' ? s[r.statusKey] : s[r.statusKey].replace('{x}', r.delta).replace('{u}', r.unitKey)
+      ];
+      const text = lines.join('\n');
+      const done = () => toast(s.copied);
+      const fail = () => toast(s.copyFail);
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done, fail));
+      } else {
+        fallbackCopy(text, done, fail);
+      }
+    }
+
+    function resultLabel(s, cat) {
+      return cat;
+    }
+
+    function fallbackCopy(text, done, fail) {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy') ? done() : fail(); }
+      catch (e) { fail(); }
+      document.body.removeChild(ta);
+    }
+
+    let toastTimer = null;
+    function toast(msg) {
+      const el = $('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+    }
+
+    function clearAll() {
+      $('height').value = '';
+      $('weight').value = '';
+      hideError();
+      lastResult = null;
+      $('resultBox').style.display = 'none';
+      $('height').focus();
+    }
+
+    function init() {
+      lang = store.get('bmi_lang', (navigator.language || 'en').toLowerCase().startsWith('zh') ? 'zh' : 'en');
+      unit = store.get('bmi_unit', 'metric');
+      history = store.get('bmi_history', []);
+      if (!Array.isArray(history)) history = [];
+
+      $('bmiForm').addEventListener('submit', e => { e.preventDefault(); calculate(true); });
+      $('btnClear').addEventListener('click', clearAll);
+      $('btnCopy').addEventListener('click', copyResult);
+      $('btnPrint').addEventListener('click', () => window.print());
+      $('btnLangToggle').addEventListener('click', () => applyLanguage(lang === 'en' ? 'zh' : 'en'));
+      $('btnUnitToggle').addEventListener('click', () => applyUnit(unit === 'metric' ? 'imperial' : 'metric'));
+      $('btnClearHistory').addEventListener('click', () => {
+        history = [];
+        store.set('bmi_history', history);
+        renderHistory();
+      });
+      [ $('height'), $('weight') ].forEach(el => {
+        el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); calculate(true); } });
+      });
+
+      applyLanguage(lang);
+      renderHistory();
+    }
+
+    init();
+  </script>
+</body>
+</html>
