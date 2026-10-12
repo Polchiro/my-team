@@ -1,0 +1,10 @@
+# task notes stay local
+workspace/inbox/*.md
+workspace/outbox/*.md
+!workspace/inbox/README.md
+!workspace/outbox/README.md
+
+# OS junk
+Thumbs.db
+desktop.ini
+.DS_Store
